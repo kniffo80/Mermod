@@ -63,10 +63,33 @@ jar {
     archiveClassifier = "raw"
 }
 
-shadowJar {
+// Loom nests `include()`d mods (e.g. forgeconfigapiport) as Jar-in-Jar files
+// under META-INF/jars in the raw jar. Shadow unpacks any jar it copies,
+// which would explode the nested mod (duplicate fabric.mod.json, missing JiJ).
+// So the nested jars are excluded from the shadow spec, staged via
+// extractNestedJars, and re-injected as plain files in shadowJar.doLast.
+def extractNestedJars = tasks.register('extractNestedJars', Copy) {
     dependsOn(jar)
+    from(zipTree(jar.archiveFile)) {
+        include 'META-INF/jars/*.jar'
+    }
+    into layout.buildDirectory.dir('nested-jars')
+}
+
+shadowJar {
+    dependsOn(jar, extractNestedJars)
     mainSpec.sourcePaths.clear()
-    from(zipTree(jar.archiveFile))
+    from(zipTree(jar.archiveFile)) {
+        exclude 'META-INF/jars/*.jar'
+    }
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = null
+    doLast {
+        // Shadow unpacks nested Jar-in-Jar mods; re-add them as plain files.
+        ant.zip(destfile: archiveFile.get().asFile, update: true) {
+            fileset(dir: extractNestedJars.get().destinationDir) {
+                include(name: 'META-INF/jars/*.jar')
+            }
+        }
+    }
 }
