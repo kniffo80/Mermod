@@ -57,6 +57,9 @@ processResources {
     filesMatching("fabric.mod.json") {
         expand replaceProperties + [project: project]
     }
+    // The access widener lives in the common module; copy it into this mod's own
+    // resources so Fabric Loader can resolve it in the dev runtime as well.
+    from(project(':common').file('src/main/resources/mermod.accesswidener'))
 }
 
 jar {

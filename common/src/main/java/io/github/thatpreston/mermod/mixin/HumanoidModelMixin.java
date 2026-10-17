@@ -26,13 +26,13 @@ public abstract class HumanoidModelMixin<T extends HumanoidRenderState> extends 
     public HumanoidModelMixin(ModelPart root) {
         super(root);
     }
-    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At(value = "CONSTANT", args = "floatValue=26.0F", ordinal = 0), cancellable = true)
-    private void onSetupAnim(T state, CallbackInfo info) {
+    @Inject(method = "setupSwimAnimation(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;FF)V", at = @At(value = "CONSTANT", args = "floatValue=26.0F", ordinal = 0), cancellable = true)
+    private void onSetupSwimAnimation(T state, float animationPos, float swimAmount, CallbackInfo info) {
         if(MermodConfig.shouldReplaceSwimAnimation()) {
             if(state instanceof AvatarRenderStateExtension extension && extension.mermod$getTailStyle() != null && state.isInWater) {
-                float swimAmount = state.swimAmount;
-                float right = state.attackArm == HumanoidArm.RIGHT && state.attackTime > 0 ? 0 : swimAmount;
-                float left = state.attackArm == HumanoidArm.LEFT && state.attackTime > 0 ? 0 : swimAmount;
+                HumanoidArm swingArm = state.currentSwing != null ? state.currentSwing.hand().asArm(state.mainArm) : null;
+                float right = swingArm == HumanoidArm.RIGHT ? 0 : swimAmount;
+                float left = swingArm == HumanoidArm.LEFT ? 0 : swimAmount;
                 if(!state.isUsingItem) {
                     float pos = state.ageInTicks * 0.2F + state.walkAnimationPos * 0.8F;
                     float x = (-Mth.PI * 0.9F) + TailModel.getWaveHeight(pos, 0.7F, 0.035F, Mth.PI / 10);

@@ -25,7 +25,7 @@ public class MermodNeoForgeClient {
         eventBus.addListener(this::addLayers);
         eventBus.addListener(this::registerRenderPipelines);
         if(MermodClient.irisLoaded) {
-            IrisPipelines.copyPipeline(RenderPipelines.ARMOR_TRANSLUCENT, MermodRenderTypes.ARMOR_TRANSLUCENT_CULL_PIPELINE);
+            IrisPipelines.copyPipeline(RenderPipelines.ENTITY_TRANSLUCENT_CULL, MermodRenderTypes.ARMOR_TRANSLUCENT_CULL_PIPELINE);
             IrisPipelines.copyPipeline(RenderPipelines.GLINT, MermodRenderTypes.GLINT_CULL_PIPELINE);
         }
         if(Platform.isModLoaded("cloth_config")) {

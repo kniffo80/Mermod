@@ -10,7 +10,7 @@ displayName = "${mod_name}"
 authors = "ThatPreston"
 credits = "Translations by albertosaurio65, Junnaturefox, Lobster0228, and PinguinLars"
 description = '''${mod_description}'''
-logoFile = "icon.png"
+iconFile = "icon.png"
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"

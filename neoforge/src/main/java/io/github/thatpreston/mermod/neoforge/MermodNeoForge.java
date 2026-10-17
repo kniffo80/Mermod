@@ -17,7 +17,7 @@ public class MermodNeoForge {
         curiosLoaded = ModList.get().isLoaded("curios");
         Mermod.init();
         eventBus.addListener(this::commonSetup);
-        container.registerConfig(ModConfig.Type.SERVER, MermodConfig.SERVER_SPEC);
+        container.registerConfig(ModConfig.Type.SYNCED, MermodConfig.SERVER_SPEC);
         container.registerConfig(ModConfig.Type.CLIENT, MermodConfig.CLIENT_SPEC);
     }
     private void commonSetup(final FMLCommonSetupEvent event) {

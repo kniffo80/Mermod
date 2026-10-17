@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.player.Player;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -42,7 +43,7 @@ public abstract class AvatarRendererMixin<A extends Avatar & ClientAvatarEntity>
                     float pos = state.ageInTicks * 0.2F + state.walkAnimationPos * 0.8F;
                     swimAngle += TailModel.getWaveHeight(pos, -0.1F, 0.035F, 10) + 6;
                 }
-                stack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(state.swimAmount, 0, swimAngle)));
+                stack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(Mth.lerp(state.swimAmount, 0, swimAngle))));
                 if(state.isVisuallySwimming) {
                     stack.translate(0, -1, 0.3F);
                 }

@@ -24,7 +24,7 @@ public class MermodFabricClient implements ClientModInitializer {
         RenderPipelines.register(MermodRenderTypes.ARMOR_TRANSLUCENT_CULL_PIPELINE);
         RenderPipelines.register(MermodRenderTypes.GLINT_CULL_PIPELINE);
         if(MermodClient.irisLoaded) {
-            IrisPipelines.copyPipeline(RenderPipelines.ARMOR_TRANSLUCENT, MermodRenderTypes.ARMOR_TRANSLUCENT_CULL_PIPELINE);
+            IrisPipelines.copyPipeline(RenderPipelines.ENTITY_TRANSLUCENT_CULL, MermodRenderTypes.ARMOR_TRANSLUCENT_CULL_PIPELINE);
             IrisPipelines.copyPipeline(RenderPipelines.GLINT, MermodRenderTypes.GLINT_CULL_PIPELINE);
         }
     }

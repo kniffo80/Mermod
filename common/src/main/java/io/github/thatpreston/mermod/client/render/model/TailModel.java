@@ -4,13 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.thatpreston.mermod.client.render.AvatarRenderStateExtension;
 import io.github.thatpreston.mermod.client.render.TailStyle;
 import io.github.thatpreston.mermod.mixin.ModelPartAccessor;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
-import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
@@ -100,7 +99,7 @@ public class TailModel extends EntityModel<AvatarRenderState> {
     }
     public void submit(PoseStack stack, OrderedSubmitNodeCollector collector, int light, int overlay, TailStyle style, RenderType renderType, int outlineColor, boolean isOverlay) {
         if(style.hasBra()) {
-            collector.submitModelPart(this.bra, stack, renderType, light, overlay, null, false, false, isOverlay ? -1 : style.braColor(), null, outlineColor);
+            collector.submitModelPart(this.bra, stack, renderType, light, overlay, null, isOverlay ? -1 : style.braColor(), outlineColor);
         }
         this.renderParts(this.parts, stack, collector, light, overlay, renderType, style, outlineColor, isOverlay);
     }
@@ -121,14 +120,10 @@ public class TailModel extends EntityModel<AvatarRenderState> {
         for(int cubeIndex = 0; cubeIndex < cubes.size(); cubeIndex++) {
             int color = cubeIndex == 0 ? primaryColor : secondaryColor;
             ModelPart.Cube cube = cubes.get(cubeIndex);
-            collector.submitCustomGeometry(stack, renderType, (pose, consumer) -> {
-                cube.compile(pose, consumer, light, overlay, color);
-                if(outlineColor != 0 && (renderType.outline().isPresent() || renderType.isOutline())) {
-                    OutlineBufferSource outlineBufferSource = Minecraft.getInstance().renderBuffers().outlineBufferSource();
-                    outlineBufferSource.setColor(outlineColor);
-                    cube.compile(pose, outlineBufferSource.getBuffer(renderType), light, overlay, color);
-                }
-            });
+            collector.submitCustomGeometry(stack, renderType, (pose, consumer) -> cube.compile(pose, consumer, light, overlay, color));
+            if(outlineColor != 0) {
+                renderType.outline().ifPresent(outlineType -> collector.submitCustomGeometry(stack, outlineType, (pose, consumer) -> cube.compile(pose, consumer, 15728880, OverlayTexture.NO_OVERLAY, outlineColor)));
+            }
         }
     }
 }

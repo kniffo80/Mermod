@@ -2,7 +2,7 @@ package io.github.thatpreston.mermod.neoforge.compat;
 
 import io.github.thatpreston.mermod.Mermod;
 import io.github.thatpreston.mermod.registry.RegistryHandler;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -31,7 +31,7 @@ public class CuriosCompat {
                 Mermod.addEffects(context.entity());
             }
             @Override
-            public boolean isEnderMask(SlotContext context, EnderMan entity, ItemStack stack) {
+            public boolean isEnderMask(SlotContext context, Enderman entity, ItemStack stack) {
                 return false;
             }
         });
