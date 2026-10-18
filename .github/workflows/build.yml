@@ -1,0 +1,53 @@
+name: Build
+
+# Läuft auf jedem Branch- und jedem PR-Push — Ports wie `26.3` sollen ohne Merge nach
+# `main` weiterarbeiten können. Der `branches`-Filter hält Tag-Pushes draußen: die
+# löst nur release.yml aus (siehe dort).
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # JDK 26: Gradle läuft damit, kompiliert wird mit release=25 (siehe build.gradle).
+      - name: JDK einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      # `build` allein erzeugt hier nur die unverschatteten JARs — die auslieferbaren
+      # Mod-JARs (mit den Common-Klassen und den Jar-in-Jar-Deps) entstehen in
+      # :fabric:shadowJar bzw. :neoforge:shadowJar.
+      - name: Bauen
+        run: ./gradlew build shadowJar
+
+      # Die Branch-/MC-Version steht im Artefaktnamen: bei mehreren parallelen Ports
+      # (26.1, 26.3, …) sieht man sonst nicht, was in der JAR steckt.
+      - name: Minecraft-Version aus gradle.properties lesen
+        id: mc
+        run: echo "version=$(sed -n 's/^minecraft_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+
+      # Beide Loader in einem Artefakt. -raw.jar ist die unverschattete JAR,
+      # -sources.jar ist für Modder — beides gehört nicht in ein Release.
+      - name: Mod-JARs als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc${{ steps.mc.outputs.version }}-mermod-${{ github.sha }}
+          path: |
+            fabric/build/libs/*.jar
+            !fabric/build/libs/*-raw.jar
+            !fabric/build/libs/*-sources.jar
+            neoforge/build/libs/*.jar
+            !neoforge/build/libs/*-raw.jar
+            !neoforge/build/libs/*-sources.jar
+          retention-days: 14

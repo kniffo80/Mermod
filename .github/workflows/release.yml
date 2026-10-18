@@ -1,0 +1,82 @@
+name: Release
+
+# Startet bei einem Tag wie v4.0.2:
+#   git tag v4.0.2 && git push origin v4.0.2
+#
+# Wichtig für mehrere parallele Ports: Ein Tag hängt am **Commit**, nicht am Branch.
+# Wer auf dem Branch `26.3` einen Tag setzt und pusht, released genau diesen Stand —
+# ein Merge nach `main` ist dafür nicht nötig. Der Trigger `tags: ['v*']` feuert
+# unabhängig davon, von welchem Branch aus gepusht wurde.
+#
+# Der Tag ist die einzige Wahrheit für die Versionsnummer: Das führende "v" wird
+# abgestreift und der Rest per -Pversion=... an Gradle übergeben. build.gradle hängt
+# für die JAR-Namen die Minecraft-Version an (mermod-fabric-4.0.2+26.3.jar) und
+# schreibt die Tag-Version in fabric.mod.json bzw. neoforge.mods.toml. gradle.properties
+# muss vor dem Tagen also NICHT angefasst werden. Es wird nur geprüft, dass der Tag
+# wie vX.Y.Z aussieht.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # JDK 26: Gradle läuft damit, kompiliert wird mit release=25 (siehe build.gradle).
+      - name: JDK einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      # Der Tag liefert die Version, aus gradle.properties kommt die Ziel-Minecraft-Version
+      # für den Release-Titel. Die JAR-Namen bekommen das "+<mc>" von Gradle selbst.
+      - name: Version aus Tag und gradle.properties ableiten
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag $GITHUB_REF_NAME sieht nicht wie vX.Y.Z aus (z. B. v4.0.2)."
+            exit 1
+          fi
+          MC="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          if [ -z "$MC" ]; then
+            echo "::error::minecraft_version fehlt in gradle.properties."
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "mc=$MC" >> "$GITHUB_OUTPUT"
+          echo "Release-Version: $VERSION (Minecraft $MC)"
+
+      - name: Bauen
+        run: ./gradlew build shadowJar -Pversion="${{ steps.version.outputs.value }}"
+
+      # gh release create kann keine Muster ausschließen — deshalb erst die
+      # auslieferbaren JARs (ohne -raw/-sources) nach dist/ kopieren.
+      - name: Auslieferbare JARs einsammeln
+        run: |
+          mkdir -p dist
+          find fabric/build/libs neoforge/build/libs -maxdepth 1 -name '*.jar' \
+            ! -name '*-raw.jar' ! -name '*-sources.jar' -exec cp {} dist/ \;
+          ls -l dist
+
+      # Legt das GitHub-Release mit automatisch erzeugten Release-Notes an und hängt
+      # beide Loader-JARs an. Titel enthält die Minecraft-Version, damit auf der
+      # Releases-Seite sofort sichtbar ist, wofür der Build gedacht ist.
+      - name: GitHub-Release anlegen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "v${{ steps.version.outputs.value }}+${{ steps.version.outputs.mc }}" \
+            --generate-notes \
+            dist/*.jar

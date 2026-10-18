@@ -45,7 +45,7 @@ dependencies {
 processResources {
     var replaceProperties = [
             mod_id: mod_id,
-            mod_version: mod_version,
+            mod_version: rootProject.releaseModVersion,
             mod_name: mod_name,
             mod_description: mod_description,
             mod_license: mod_license,

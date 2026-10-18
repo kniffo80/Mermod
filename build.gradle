@@ -9,9 +9,18 @@ architectury {
     minecraft = project.minecraft_version
 }
 
+// Release-Tags setzen -Pversion=X.Y.Z (siehe .github/workflows/release.yml). Aus einer
+// solchen Version werden zwei Dinge abgeleitet: die Artefakt-Version bekommt die
+// Minecraft-Version angehängt (X.Y.Z+26.3), die Mod-Metadaten in fabric.mod.json und
+// neoforge.mods.toml bekommen genau die Tag-Version (X.Y.Z). Ohne -Pversion gilt
+// weiterhin mod_version aus gradle.properties.
+def taggedVersion = providers.gradleProperty("version").getOrNull()
+ext.releaseModVersion = taggedVersion ?: rootProject.mod_version
+ext.releaseFullVersion = "${releaseModVersion}+${rootProject.minecraft_version}"
+
 allprojects {
     group = rootProject.maven_group
-    version = "$rootProject.mod_version+$rootProject.minecraft_version"
+    version = rootProject.releaseFullVersion
 }
 
 subprojects {
@@ -95,8 +104,8 @@ publishMods {
         from mrOptions
         file project(":fabric")
         modLoaders.add("fabric")
-        displayName = "Mermod ${project.mod_version} [Fabric ${project.minecraft_version}]"
-        version = "${project.mod_version}-fabric+${project.minecraft_version}"
+        displayName = "Mermod ${releaseModVersion} [Fabric ${project.minecraft_version}]"
+        version = "${releaseModVersion}-fabric+${project.minecraft_version}"
         requires("fabric-api")
         optional("trinkets-updated")
     }
@@ -104,8 +113,8 @@ publishMods {
         from mrOptions
         file project(":neoforge")
         modLoaders.add("neoforge")
-        displayName = "Mermod ${project.mod_version} [NeoForge ${project.minecraft_version}]"
-        version = "${project.mod_version}-neoforge+${project.minecraft_version}"
+        displayName = "Mermod ${releaseModVersion} [NeoForge ${project.minecraft_version}]"
+        version = "${releaseModVersion}-neoforge+${project.minecraft_version}"
         optional("curios")
     }
     curseforge("curseforgeFabric") {
@@ -114,7 +123,7 @@ publishMods {
         modLoaders.add("fabric")
         projectId = "463248"
         projectSlug = "mermod-fabric"
-        displayName = "Mermod ${project.mod_version} [Fabric ${project.minecraft_version}]"
+        displayName = "Mermod ${releaseModVersion} [Fabric ${project.minecraft_version}]"
         requires("fabric-api")
         optional("trinkets-updated")
     }
@@ -124,7 +133,7 @@ publishMods {
         modLoaders.add("neoforge")
         projectId = "709092"
         projectSlug = "mermod-neoforge"
-        displayName = "Mermod ${project.mod_version} [NeoForge ${project.minecraft_version}]"
+        displayName = "Mermod ${releaseModVersion} [NeoForge ${project.minecraft_version}]"
         optional("curios")
     }
 }
